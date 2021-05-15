@@ -1,3 +1,9 @@
+const socket = io();
+
+socket.on('login', ({ name, content }) => addMessage(name, content));
+socket.on('message', ({ author, content }) => addMessage(author, content));
+socket.on('removeUser', ({ name, content}) => addMessage(name, content));
+
 const loginForm = document.querySelector('#welcome-form'),
   messagesSection = document.querySelector('#messages-section'),
   messagesList = document.querySelector('#messages-list'),
@@ -12,6 +18,9 @@ const login = function(event) {
 
   if (userNameInput.value !== '') {
     userName = userNameInput.value;
+    messageContent = `${userName} has joined to chat.`;
+
+    socket.emit('login', { name: userName, content: messageContent, event: 'login' });
 
     loginForm.classList.remove('show');
     messagesSection.classList.add('show');
@@ -35,7 +44,10 @@ const addMessage = function(author, content) {
   message.appendChild(title);
   message.appendChild(messageContent);
   
-  if (author === userName) {
+  if (author === 'Chat_Bot') {
+    title.innerHTML = author;
+    message.classList.add('chat--bot');
+  }  else if (author === userName) {
     message.classList.add('message--self');
     title.innerHTML = 'You';
   } else {
@@ -46,10 +58,14 @@ const addMessage = function(author, content) {
 };
 
 const sendMessage = function(event) {
-  event.preventDefault();  
+  event.preventDefault();
   
-  if (messageContentInput.value !== '') {
+  let messageContent = messageContentInput.value;
+  
+  if (messageContent !== '') {
     addMessage(userName, messageContentInput.value);
+
+    socket.emit('message', { author: userName, content: messageContent });
 
     messageContentInput.value = '';
   } else {
